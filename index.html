@@ -157,7 +157,7 @@
       .metric-card {
         padding: 1rem !important;
       }
-      
+
       table {
         font-size: 0.75rem;
       }
@@ -170,7 +170,6 @@
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col">
 
-  <!-- Disclaimer Modal -->
   <div id="disclaimerModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
     <div class="glass-effect rounded-2xl p-8 max-w-md w-full shadow-2xl text-center border border-amber-500/20">
       <div class="text-amber-400 text-5xl mb-4">⚠️</div>
@@ -184,10 +183,7 @@
     </div>
   </div>
 
-  <!-- Main Content -->
   <div id="mainContent" class="hidden flex-grow flex flex-col" aria-hidden="true">
-
-    <!-- Header -->
     <header class="glass-effect border-b border-slate-700/50 py-6 px-4 md:px-8">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl md:text-4xl font-bold gradient-text mb-1">🇮🇳 Indian Stock Master</h1>
@@ -195,10 +191,7 @@
       </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-8 space-y-6">
-
-      <!-- Tabs -->
       <div class="flex border-b border-slate-700/50 space-x-2 overflow-x-auto">
         <button id="tabSheet" aria-pressed="true" onclick="switchMethod('sheet')" class="tab-button active py-3 px-4 text-emerald-400 font-semibold text-sm whitespace-nowrap focus:outline-none">
           🌐 Google Sheet Live Sync
@@ -208,10 +201,7 @@
         </button>
       </div>
 
-      <!-- Input Card -->
       <div class="glass-effect rounded-2xl p-6 md:p-8 shadow-lg space-y-6 border border-slate-700/50">
-
-        <!-- Sheet Input Area -->
         <div id="sheetInputArea" aria-live="polite">
           <label class="block text-xs font-semibold tracking-wider text-slate-400 mb-2 uppercase" for="sheetUrl">Google Apps Script Web App URL</label>
           <input id="sheetUrl" type="text"
@@ -223,14 +213,12 @@
           </p>
         </div>
 
-        <!-- Paste Input Area -->
         <div id="pasteInputArea" class="hidden">
           <label class="block text-xs font-semibold tracking-wider text-slate-400 mb-2 uppercase" for="bulkPasteText">Paste Data from Sheet</label>
           <p class="text-xs text-slate-500 mb-3">Format: <span class="text-emerald-400">Ticker | Price | EPS | Market Cap | 52W High | 52W Low | P/S | P/B | ROCE | D/E | Promoter | ROE</span></p>
           <textarea id="bulkPasteText" rows="6" placeholder="RELIANCE	2450.50	65	180000	2500	2200	3.2	2.1	18	0.5	40.3	22&#10;TCS	3800.00	115	250000	3900	3400	4.5	2.8	22	0.2	72.1	25" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-300"></textarea>
         </div>
 
-        <!-- Controls -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-700/50">
           <div class="flex items-end gap-2">
             <button id="runBtn" onclick="processStockAnalysis()" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-900 font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 button-glow transition-all duration-300 cursor-pointer">
@@ -243,7 +231,6 @@
         </div>
       </div>
 
-      <!-- Results Card -->
       <div id="resultsCard" class="glass-effect rounded-2xl p-6 md:p-8 shadow-lg hidden border border-slate-700/50" aria-live="polite" aria-label="Results dashboard">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
@@ -253,7 +240,6 @@
           <div id="emptyState" class="text-sm text-slate-400 mt-4 md:mt-0 hidden">No valid rows found. Check your data format.</div>
         </div>
 
-        <!-- Metrics Summary -->
         <div id="metricsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden">
           <div class="metric-card rounded-lg p-4 md:p-6">
             <div class="metric-label">Average Score</div>
@@ -273,7 +259,6 @@
           </div>
         </div>
 
-        <!-- Scoring Breakdown (collapsible) -->
         <details class="mb-6 p-4 rounded-lg bg-slate-800/30 border border-slate-700/50 cursor-pointer">
           <summary class="font-semibold text-slate-300 hover:text-emerald-400 transition-colors">📊 Scoring Breakdown & Weights</summary>
           <div class="mt-4 text-xs text-slate-400 space-y-2">
@@ -288,7 +273,6 @@
           </div>
         </details>
 
-        <!-- Table -->
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs md:text-sm">
             <thead>
@@ -311,74 +295,24 @@
           </table>
         </div>
       </div>
-
     </main>
 
-    <!-- Footer -->
     <footer class="glass-effect border-t border-slate-700/50 py-4 px-4 md:px-8 text-center text-xs text-slate-500">
       <p>Educational tool only. Not financial advice. Always conduct your own research and consult a financial advisor.</p>
     </footer>
   </div>
 
   <script>
-    // ============================================================================
-    // CONFIGURATION & SCORING SYSTEM
-    // ============================================================================
-
     const SCORING_CONFIG = {
-      pe: {
-        name: 'P/E Ratio',
-        weight: 0.12,
-        optimal: { min: 10, max: 25 },
-        lowerIsBetter: true,
-      },
-      pricePosition: {
-        name: '52W Price Position',
-        weight: 0.10,
-        optimal: { min: 35, max: 65 },
-        lowerIsBetter: false,
-      },
-      ps: {
-        name: 'P/S Ratio',
-        weight: 0.10,
-        optimal: { min: 0.5, max: 3 },
-        lowerIsBetter: true,
-      },
-      pb: {
-        name: 'P/B Ratio',
-        weight: 0.10,
-        optimal: { min: 0.5, max: 3 },
-        lowerIsBetter: true,
-      },
-      roce: {
-        name: 'ROCE',
-        weight: 0.13,
-        optimal: { min: 15, max: 40 },
-        lowerIsBetter: false,
-      },
-      roe: {
-        name: 'ROE',
-        weight: 0.15,
-        optimal: { min: 15, max: 30 },
-        lowerIsBetter: false,
-      },
-      debtToEquity: {
-        name: 'Debt to Equity',
-        weight: 0.10,
-        optimal: { min: 0, max: 0.5 },
-        lowerIsBetter: true,
-      },
-      promoterHolding: {
-        name: 'Promoter Holding',
-        weight: 0.20,
-        optimal: { min: 40, max: 100 },
-        lowerIsBetter: false,
-      },
+      pe: { name: 'P/E Ratio', weight: 0.12, optimal: { min: 10, max: 25 }, lowerIsBetter: true },
+      pricePosition: { name: '52W Price Position', weight: 0.10, optimal: { min: 35, max: 65 }, lowerIsBetter: false },
+      ps: { name: 'P/S Ratio', weight: 0.10, optimal: { min: 0.5, max: 3 }, lowerIsBetter: true },
+      pb: { name: 'P/B Ratio', weight: 0.10, optimal: { min: 0.5, max: 3 }, lowerIsBetter: true },
+      roce: { name: 'ROCE', weight: 0.13, optimal: { min: 15, max: 40 }, lowerIsBetter: false },
+      roe: { name: 'ROE', weight: 0.15, optimal: { min: 15, max: 30 }, lowerIsBetter: false },
+      debtToEquity: { name: 'Debt to Equity', weight: 0.10, optimal: { min: 0, max: 0.5 }, lowerIsBetter: true },
+      promoterHolding: { name: 'Promoter Holding', weight: 0.20, optimal: { min: 40, max: 100 }, lowerIsBetter: false },
     };
-
-    // ============================================================================
-    // STATE & UTILITIES
-    // ============================================================================
 
     let selectedMethod = 'sheet';
     let lastResults = [];
@@ -407,19 +341,10 @@
       return values.map(v => v.trim());
     }
 
-    // ============================================================================
-    // SCORING ENGINE
-    // ============================================================================
-
-    /**
-     * Score a single metric (0-100)
-     */
     function scoreMetric(metricKey, value) {
       if (value === null || isNaN(value)) return 50;
-
       const config = SCORING_CONFIG[metricKey];
       if (!config) return 50;
-
       const { min, max, lowerIsBetter } = config;
       const range = max - min;
 
@@ -434,13 +359,9 @@
       }
     }
 
-    /**
-     * Calculate overall weighted score
-     */
     function calculateOverallScore(metrics) {
       let totalScore = 0;
       let totalWeight = 0;
-
       for (const [key, config] of Object.entries(SCORING_CONFIG)) {
         const value = metrics[key];
         if (value !== null && !isNaN(value)) {
@@ -449,13 +370,9 @@
           totalWeight += config.weight;
         }
       }
-
       return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
     }
 
-    /**
-     * Get rating badge
-     */
     function getRatingBadge(score) {
       if (score >= 75) {
         return { label: 'Worth Researching', class: 'score-excellent', icon: '📈' };
@@ -465,10 +382,6 @@
         return { label: 'Avoid for Now', class: 'score-poor', icon: '📉' };
       }
     }
-
-    // ============================================================================
-    // UI & MODAL
-    // ============================================================================
 
     const disclaimerModal = document.getElementById('disclaimerModal');
     const mainContent = document.getElementById('mainContent');
@@ -528,10 +441,6 @@
       }
     }
 
-    // ============================================================================
-    // DATA FETCHING & PARSING
-    // ============================================================================
-
     function processStockAnalysis() {
       if (selectedMethod === 'sheet') {
         fetchFromGoogleSheet();
@@ -542,13 +451,11 @@
 
     async function fetchFromGoogleSheet() {
       const scriptUrl = document.getElementById('sheetUrl').value.trim();
-      if (!scriptUrl) {
-        return alert('Please enter your Google Apps Script Web App URL.');
-      }
+      if (!scriptUrl) return alert('Please enter your Google Apps Script Web App URL.');
 
       setLoading(true);
       try {
-        const response = await fetch(scriptUrl);
+        const response = await fetch(scriptUrl, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const csvText = await response.text();
         const lines = csvText.split(/\r?\n/).filter(Boolean);
@@ -563,16 +470,10 @@
 
     function parseManualPasteData() {
       const rawText = document.getElementById('bulkPasteText').value.trim();
-      if (!rawText) {
-        return alert('Please paste row data into the text field.');
-      }
+      if (!rawText) return alert('Please paste row data into the text field.');
       const lines = rawText.split(/\r?\n/).filter(Boolean);
       renderTableFromRawRows(lines, '\t');
     }
-
-    // ============================================================================
-    // TABLE RENDERING
-    // ============================================================================
 
     function createRowNode(stock) {
       const tr = document.createElement('tr');
@@ -583,12 +484,12 @@
         { text: `₹${stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, class: 'text-right text-slate-300 px-2' },
         { text: stock.pe.toFixed(2), class: 'text-right font-semibold text-emerald-300 px-2' },
         { text: stock.pricePosition.toFixed(1) + '%', class: 'text-right text-slate-300 px-2' },
-        { text: stock.ps ? stock.ps.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
-        { text: stock.pb ? stock.pb.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
-        { text: stock.roce ? stock.roce.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
-        { text: stock.roe ? stock.roe.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
-        { text: stock.debtToEquity ? stock.debtToEquity.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
-        { text: stock.promoterHolding ? stock.promoterHolding.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.ps !== null ? stock.ps.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.pb !== null ? stock.pb.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.roce !== null ? stock.roce.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.roe !== null ? stock.roe.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.debtToEquity !== null ? stock.debtToEquity.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.promoterHolding !== null ? stock.promoterHolding.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
       ];
 
       cells.forEach(({ text, class: className }) => {
@@ -598,7 +499,6 @@
         tr.appendChild(td);
       });
 
-      // Score Circle
       const tdScore = document.createElement('td');
       tdScore.className = 'py-2 md:py-4 px-2 text-right';
       const scoreSpan = document.createElement('span');
@@ -607,7 +507,6 @@
       tdScore.appendChild(scoreSpan);
       tr.appendChild(tdScore);
 
-      // Rating Badge
       const tdRating = document.createElement('td');
       tdRating.className = 'py-2 md:py-4 px-2 text-center';
       const badgeSpan = document.createElement('span');
@@ -630,11 +529,10 @@
         if (!row || !row.trim()) return;
 
         const columns = parseCsvRow(row, delimiter);
-        if (columns.length < 11) return;
+        if (columns.length < 12) return;
 
-        // Skip header
         const first = columns[0].toString().toLowerCase();
-        if (/(ticker|symbol|price|eps|market|52w|roce|roe)/.test(first)) return;
+        if (/(ticker|symbol)/.test(first)) return;
 
         try {
           const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
@@ -648,14 +546,12 @@
           const roce = parseFloat(columns[8].toString().replace(/[^\d.\-]/g, ''));
           const debtToEquity = parseFloat(columns[9].toString().replace(/[^\d.\-]/g, ''));
           const promoterHolding = parseFloat(columns[10].toString().replace(/[^\d.\-]/g, ''));
-          const roe = columns[11] ? parseFloat(columns[11].toString().replace(/[^\d.\-]/g, '')) : null;
+          const roe = parseFloat(columns[11].toString().replace(/[^\d.\-]/g, ''));
 
           if (!ticker || isNaN(price) || isNaN(eps) || price <= 0 || eps <= 0) return;
 
-          // Calculate derived metrics
           const pe = price / eps;
-          
-          // 52W Position: where is the stock in its 52-week range
+
           let pricePosition = 50;
           if (high52w > low52w && high52w > 0) {
             pricePosition = ((price - low52w) / (high52w - low52w)) * 100;
@@ -665,12 +561,12 @@
           const metrics = {
             pe,
             pricePosition,
-            ps: ps && ps > 0 ? ps : null,
-            pb: pb && pb > 0 ? pb : null,
-            roce: roce && roce > 0 ? roce : null,
-            roe: roe && roe > 0 ? roe : null,
-            debtToEquity: debtToEquity && debtToEquity >= 0 ? debtToEquity : null,
-            promoterHolding: promoterHolding && promoterHolding > 0 ? promoterHolding : null,
+            ps: isNaN(ps) || ps <= 0 ? null : ps,
+            pb: isNaN(pb) || pb <= 0 ? null : pb,
+            roce: isNaN(roce) || roce <= 0 ? null : roce,
+            roe: isNaN(roe) || roe <= 0 ? null : roe,
+            debtToEquity: isNaN(debtToEquity) || debtToEquity < 0 ? null : debtToEquity,
+            promoterHolding: isNaN(promoterHolding) || promoterHolding <= 0 ? null : promoterHolding,
           };
 
           const overallScore = calculateOverallScore(metrics);
@@ -682,13 +578,13 @@
             eps,
             pe,
             pricePosition,
-            ps,
-            pb,
-            roce,
-            roe,
-            debtToEquity,
-            promoterHolding,
-            metrics,
+            ps: metrics.ps,
+            pb: metrics.pb,
+            roce: metrics.roce,
+            roe: metrics.roe,
+            debtToEquity: metrics.debtToEquity,
+            promoterHolding: metrics.promoterHolding,
+            marketCap,
             overallScore,
           };
 
@@ -699,8 +595,8 @@
         }
       });
 
-      // Sort by score descending
       lastResults.sort((a, b) => b.overallScore - a.overallScore);
+      tbody.innerHTML = '';
       lastResults.forEach(r => tbody.appendChild(r.rowNode));
 
       updateSummaryMetrics(counter);
@@ -737,14 +633,8 @@
       document.getElementById('countPoor').textContent = poor;
     }
 
-    // ============================================================================
-    // EXPORT
-    // ============================================================================
-
     function downloadResults() {
-      if (!lastResults || lastResults.length === 0) {
-        return alert('No results to download.');
-      }
+      if (!lastResults || lastResults.length === 0) return alert('No results to download.');
 
       const header = ['Ticker', 'Price', 'P/E', '52W%', 'P/S', 'P/B', 'ROCE', 'ROE', 'D/E', 'Promoter', 'Overall Score', 'Rating'];
       const lines = [header.join(',')];
@@ -756,12 +646,12 @@
           r.price.toFixed(2),
           r.pe.toFixed(2),
           r.pricePosition.toFixed(1),
-          r.ps ? r.ps.toFixed(2) : '-',
-          r.pb ? r.pb.toFixed(2) : '-',
-          r.roce ? r.roce.toFixed(1) : '-',
-          r.roe ? r.roe.toFixed(1) : '-',
-          r.debtToEquity ? r.debtToEquity.toFixed(2) : '-',
-          r.promoterHolding ? r.promoterHolding.toFixed(1) : '-',
+          r.ps !== null ? r.ps.toFixed(2) : '-',
+          r.pb !== null ? r.pb.toFixed(2) : '-',
+          r.roce !== null ? r.roce.toFixed(1) : '-',
+          r.roe !== null ? r.roe.toFixed(1) : '-',
+          r.debtToEquity !== null ? r.debtToEquity.toFixed(2) : '-',
+          r.promoterHolding !== null ? r.promoterHolding.toFixed(1) : '-',
           r.overallScore,
           badge.label,
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
@@ -778,10 +668,6 @@
       a.remove();
       URL.revokeObjectURL(url);
     }
-
-    // ============================================================================
-    // INIT
-    // ============================================================================
 
     document.addEventListener('DOMContentLoaded', () => {
       disclaimerModal.classList.remove('hidden');
