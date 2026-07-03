@@ -1,201 +1,405 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indian Stock Analytics Board</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Indian Stock Analytics Board</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
 
-    <div id="disclaimerModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 border border-amber-500 rounded-xl p-6 max-w-md w-full shadow-2xl text-center">
-            <div class="text-amber-500 text-4xl mb-3">⚠️</div>
-            <h2 class="text-xl font-bold mb-2 text-amber-400">Financial Disclaimer</h2>
-            <p class="text-gray-300 text-sm mb-6 leading-relaxed">
-                Disclaimer: This tool is for educational purposes only. Not financial advice. Past performance does not guarantee future results.
-            </p>
-            <button onclick="acceptDisclaimer()" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg cursor-pointer">
-                I Understand & Agree
-            </button>
+  <!-- Disclaimer modal -->
+  <div id="disclaimerModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
+    <div class="bg-gray-800 border border-amber-500 rounded-xl p-6 max-w-md w-full shadow-2xl text-center">
+      <div class="text-amber-500 text-4xl mb-3">⚠️</div>
+      <h2 id="disclaimerTitle" class="text-xl font-bold mb-2 text-amber-400">Financial Disclaimer</h2>
+      <p class="text-gray-300 text-sm mb-6 leading-relaxed">
+        This tool is for educational purposes only and is not financial advice. Past performance does not guarantee future results.
+      </p>
+      <button id="acceptDisclaimerBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400">
+        I Understand &amp; Agree
+      </button>
+    </div>
+  </div>
+
+  <!-- Main content (hidden while modal is active) -->
+  <div id="mainContent" class="hidden flex-grow flex flex-col" aria-hidden="true">
+
+    <header class="bg-gray-800 border-b border-gray-700 py-4 px-6 text-center">
+      <h1 class="text-2xl font-bold text-emerald-400 tracking-wide">🇮🇳 Indian Stock Master Dashboard</h1>
+      <p class="text-xs text-gray-400 mt-1">Multi-Stock Valuation Tool (Supports Live URL Sync &amp; Offline Copy‑Paste)</p>
+    </header>
+
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 md:p-8 space-y-6">
+
+      <div class="flex border-b border-gray-700 space-x-4">
+        <button id="tabSheet" aria-pressed="true" onclick="switchMethod('sheet')" class="py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer">
+          🌐 Google Sheet Live Sync (For GitHub Deployment)
+        </button>
+        <button id="tabPaste" aria-pressed="false" onclick="switchMethod('paste')" class="py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer">
+          📋 Manual Paste Backup (For Local Computer Testing)
+        </button>
+      </div>
+
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg space-y-4">
+
+        <div id="sheetInputArea" aria-live="polite">
+          <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="sheetUrl">Target Google Sheet Database Link</label>
+          <input id="sheetUrl" type="text"
+            placeholder="Paste Google Sheets URL (published or sheet share link). We'll attempt to convert it to a CSV export URL."
+            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+            value="" />
+          <p class="text-[11px] text-amber-400 mt-1">
+            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. If CORS prevents direct fetch in your browser, use Manual Paste below.
+          </p>
         </div>
-    </div>
 
-    <div id="mainContent" class="hidden flex-grow flex flex-col">
-        <header class="bg-gray-800 border-b border-gray-700 py-4 px-6 text-center">
-            <h1 class="text-2xl font-bold text-emerald-400 tracking-wide">🇮🇳 Indian Stock Master Dashboard</h1>
-            <p class="text-xs text-gray-400 mt-1">Multi-Stock Valuation Tool (Supports Live URL Sync & Offline Copy-Paste)</p>
-        </header>
+        <div id="pasteInputArea" class="hidden">
+          <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="bulkPasteText">Copy Columns from Sheet &amp; Paste Directly Here</label>
+          <p class="text-[11px] text-gray-400 mb-2">Format per line: Ticker, Price, EPS (comma or tab separated). Example:
+            <span class="italic">RELIANCE, 2450.50, 65</span>
+          </p>
+          <textarea id="bulkPasteText" rows="6" placeholder="RELIANCE, 2450.50, 65&#10;TCS, 3800.00, 115&#10;SBIN, 750.25, 48" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
 
-        <main class="flex-grow max-w-5xl w-full mx-auto p-4 md:p-8 space-y-6">
-            
-            <div class="flex border-b border-gray-700 space-x-4">
-                <button id="tabSheet" onclick="switchMethod('sheet')" class="py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer">
-                    🌐 Google Sheet Live Sync (For GitHub Deployment)
-                </button>
-                <button id="tabPaste" onclick="switchMethod('paste')" class="py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer">
-                    📋 Manual Paste Backup (For Local Computer Testing)
-                </button>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="targetPe">Target Maximum Valuation P/E Benchmark</label>
+            <input id="targetPe" type="number" min="1" value="25" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div class="flex items-end space-x-2">
+            <button id="runBtn" onclick="processStockAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              Run Portfolio Analysis
+            </button>
+            <button id="downloadBtn" onclick="downloadResults()" class="hidden bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" title="Download results as CSV">
+              ⤓ CSV
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg space-y-4">
-                
-                <div id="sheetInputArea">
-                    <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1">Target Google Sheet Database Link</label>
-                    <input id="sheetUrl" type="text" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSttJg90zlUNFO-oZSISPXqcnZdS1WoPnl7eOAvTJfS-AtH3cdFH-1Ex2dLJ3cMjluyhvANCPX2Krl4/pub?gid=0&single=true&output=csv" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 font-mono">
-                    <p class="text-[11px] text-amber-400 mt-1">⚠️ Note: Browser security rules block direct spreadsheet fetching when opening HTML code files offline directly from your home computer desktop. Run via GitHub Pages link or toggle to the manual backup tab below.</p>
-                </div>
+      <div id="resultsCard" class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg hidden" aria-live="polite">
+        <div class="flex items-start justify-between">
+          <h2 class="text-lg font-semibold text-gray-200 mb-4">Calculated Analysis Dashboard (<span id="stockCount">0</span> Stocks Found)</h2>
+          <div id="emptyState" class="text-sm text-gray-400 hidden">No valid rows found. Paste data or try a different sheet URL.</div>
+        </div>
 
-                <div id="pasteInputArea" class="hidden">
-                    <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1">Copy Columns from Sheet & Paste Directly Here</label>
-                    <p class="text-[11px] text-gray-400 mb-2">Format: Ticker, Price, EPS (Separate rows with a line break)</p>
-                    <textarea id="bulkPasteText" rows="6" placeholder="RELIANCE, 2450.50, 65&#10;TCS, 3800.00, 115&#10;SBIN, 750.25, 48" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white font-mono text-sm focus:outline-none focus:border-emerald-500"></textarea>
-                </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wider">
+                <th class="py-3 px-4">Ticker</th>
+                <th class="py-3 px-4">Market Price (₹)</th>
+                <th class="py-3 px-4">EPS (₹)</th>
+                <th class="py-3 px-4">Current P/E</th>
+                <th class="py-3 px-4 text-center">Recommendation</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody" class="text-sm divide-y divide-gray-700"></tbody>
+          </table>
+        </div>
+      </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div>
-                        <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1">Target Maximum Valuation P/E Benchmark</label>
-                        <input id="targetPe" type="number" value="25" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="processStockAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer">
-                            Run Portfolio Analysis
-                        </button>
-                    </div>
-                </div>
-            </div>
+    </main>
 
-            <div id="resultsCard" class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg hidden">
-                <h2 class="text-lg font-semibold text-gray-200 mb-4">Calculated Analysis Dashboard (<span id="stockCount">0</span> Stocks Found)</h2>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wider">
-                                <th class="py-3 px-4">Ticker Target</th>
-                                <th class="py-3 px-4">Market Price (₹)</th>
-                                <th class="py-3 px-4">EPS (₹)</th>
-                                <th class="py-3 px-4">Current P/E</th>
-                                <th class="py-3 px-4 text-center">Recommendation Output</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsTableBody" class="text-sm divide-y divide-gray-700">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+    <footer class="bg-gray-950 text-center py-3 px-4 border-t border-gray-800 text-xs text-gray-500">
+      Disclaimer: This tool is for educational purposes only. Not financial advice.
+    </footer>
+  </div>
 
-        </main>
+  <script>
+    // State
+    let selectedMethod = 'sheet';
+    let lastResults = [];
 
-        <footer class="bg-gray-950 text-center py-3 px-4 border-t border-gray-800 text-xs text-gray-500">
-            Disclaimer: This tool is for educational purposes only. Not financial advice.
-        </footer>
-    </div>
+    // Utility: Convert common Google Sheets links to CSV export URL
+    function convertGoogleSheetToCsvUrl(input) {
+      try {
+        const url = new URL(input.trim());
+        // If it's a published 'spreadsheets/d/e/...' public URL (embed/published)
+        if (url.hostname === 'docs.google.com') {
+          // Handle /spreadsheets/d/<id>/...
+          const pathParts = url.pathname.split('/');
+          const dIndex = pathParts.indexOf('d');
+          if (dIndex >= 0 && pathParts[dIndex + 1]) {
+            const id = pathParts[dIndex + 1];
+            const gid = new URLSearchParams(url.search).get('gid') || '0';
+            return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
+          }
+          // Handle the "spreadsheets/d/e/<id>/pub" style (published by URL)
+          const eIndex = pathParts.indexOf('e');
+          if (eIndex >= 0 && pathParts[eIndex + 1]) {
+            // The published-to-web "e" links usually contain a CSV when 'output=csv'
+            // We'll attempt to preserve query params and request the 'output=csv' if possible
+            const gid = new URLSearchParams(url.search).get('gid') || '0';
+            return `${url.origin}${url.pathname}?output=csv&gid=${gid}`;
+          }
+        }
+        // Fallback: return original input (maybe already a CSV URL)
+        return input.trim();
+      } catch (e) {
+        return input.trim();
+      }
+    }
 
-    <script>
-        let selectedMethod = 'sheet';
+    // Robust CSV line parser (handles quoted fields with commas)
+    function parseCsvRow(row, delimiter = ',') {
+      const values = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') {
+          if (inQuotes && row[i + 1] === '"') { // escaped quote
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === delimiter && !inQuotes) {
+          values.push(cur);
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      values.push(cur);
+      return values.map(v => v.trim());
+    }
 
-        function acceptDisclaimer() {
-            document.getElementById('disclaimerModal').classList.add('hidden');
-            document.getElementById('mainContent').classList.remove('hidden');
+    // Accessibility & Modal controls
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const mainContent = document.getElementById('mainContent');
+    const acceptBtn = document.getElementById('acceptDisclaimerBtn');
+    acceptBtn.addEventListener('click', acceptDisclaimer);
+    acceptBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') acceptDisclaimer();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !disclaimerModal.classList.contains('hidden')) {
+        // optional: allow Escape to accept the disclaimer for flow
+        acceptDisclaimer();
+      }
+    });
+
+    function acceptDisclaimer() {
+      disclaimerModal.classList.add('hidden');
+      mainContent.classList.remove('hidden');
+      mainContent.setAttribute('aria-hidden', 'false');
+      // focus first interactive element
+      document.getElementById('tabSheet').focus();
+    }
+
+    // Method switcher
+    function switchMethod(method) {
+      selectedMethod = method;
+      const tabSheet = document.getElementById('tabSheet');
+      const tabPaste = document.getElementById('tabPaste');
+      const sheetArea = document.getElementById('sheetInputArea');
+      const pasteArea = document.getElementById('pasteInputArea');
+
+      if (method === 'sheet') {
+        tabSheet.className = "py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer";
+        tabSheet.setAttribute('aria-pressed','true');
+        tabPaste.className = "py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer";
+        tabPaste.setAttribute('aria-pressed','false');
+        sheetArea.classList.remove('hidden');
+        pasteArea.classList.add('hidden');
+      } else {
+        tabPaste.className = "py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer";
+        tabPaste.setAttribute('aria-pressed','true');
+        tabSheet.className = "py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer";
+        tabSheet.setAttribute('aria-pressed','false');
+        pasteArea.classList.remove('hidden');
+        sheetArea.classList.add('hidden');
+      }
+    }
+
+    // Main entry
+    function processStockAnalysis() {
+      if (selectedMethod === 'sheet') {
+        fetchFromGoogleSheet();
+      } else {
+        parseManualPasteData();
+      }
+    }
+
+    // UI helpers
+    function setLoading(isLoading) {
+      const runBtn = document.getElementById('runBtn');
+      if (isLoading) {
+        runBtn.disabled = true;
+        runBtn.textContent = 'Processing…';
+        runBtn.classList.add('opacity-80', 'cursor-wait');
+      } else {
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Portfolio Analysis';
+        runBtn.classList.remove('opacity-80', 'cursor-wait');
+      }
+    }
+
+    // Fetch CSV from Google Sheets (attempt URL conversion)
+    async function fetchFromGoogleSheet() {
+      const rawUrl = document.getElementById('sheetUrl').value.trim();
+      if (!rawUrl) { return alert("Please enter your published Google Sheet URL or direct CSV URL."); }
+
+      const csvUrl = convertGoogleSheetToCsvUrl(rawUrl);
+      setLoading(true);
+      try {
+        const response = await fetch(csvUrl, { mode: 'cors' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const csvText = await response.text();
+        // Split into lines robustly
+        const lines = csvText.split(/\r?\n/).filter(Boolean);
+        renderTableFromRawRows(lines, ',');
+      } catch (err) {
+        console.error('Fetch error:', err);
+        alert("Failed to fetch sheet. Possible causes:\n- URL is not a CSV/export URL\n- Sheet is not published/shared for CSV\n- CORS prevents direct fetch from the browser\n\nIf fetch fails, try 'Manual Paste' and paste the rows directly.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Parse manual paste
+    function parseManualPasteData() {
+      const rawText = document.getElementById('bulkPasteText').value.trim();
+      if (!rawText) { return alert("Please paste row data into the text field."); }
+      const lines = rawText.split(/\r?\n/).filter(Boolean);
+      renderTableFromRawRows(lines, null);
+    }
+
+    // Create table row using DOM API (avoid innerHTML injection)
+    function createRowNode({ ticker, price, eps, currentPe, isUndervalued }) {
+      const tr = document.createElement('tr');
+      tr.className = "hover:bg-gray-700/30 transition border-b border-gray-800";
+
+      const tdTicker = document.createElement('td');
+      tdTicker.className = "py-3 px-4 font-bold text-gray-200";
+      tdTicker.textContent = ticker.replace(/^NSE:/i, '');
+
+      const tdPrice = document.createElement('td');
+      tdPrice.className = "py-3 px-4 text-emerald-400 font-semibold";
+      tdPrice.textContent = `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+      const tdEps = document.createElement('td');
+      tdEps.className = "py-3 px-4 text-gray-300";
+      tdEps.textContent = `₹${eps.toFixed(2)}`;
+
+      const tdPe = document.createElement('td');
+      tdPe.className = `py-3 px-4 font-bold ${isUndervalued ? 'text-emerald-400' : 'text-rose-400'}`;
+      tdPe.textContent = currentPe.toFixed(2);
+
+      const tdRec = document.createElement('td');
+      tdRec.className = "py-3 px-4 text-center";
+      const span = document.createElement('span');
+      span.className = `px-2.5 py-1 text-xs font-bold rounded-full ${isUndervalued ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-rose-950 text-rose-400 border border-rose-500/30'}`;
+      span.textContent = isUndervalued ? 'BUY / UNDERVALUED' : 'SELL / OVERVALUED';
+      tdRec.appendChild(span);
+
+      tr.appendChild(tdTicker);
+      tr.appendChild(tdPrice);
+      tr.appendChild(tdEps);
+      tr.appendChild(tdPe);
+      tr.appendChild(tdRec);
+
+      return tr;
+    }
+
+    // Main renderer
+    function renderTableFromRawRows(rowsArray, specifiedDelimiter) {
+      const targetPe = parseFloat(document.getElementById('targetPe').value) || 25;
+      const tbody = document.getElementById('resultsTableBody');
+      tbody.innerHTML = '';
+      let counter = 0;
+      lastResults = [];
+
+      rowsArray.forEach(row => {
+        if (!row || !row.trim()) return;
+
+        // Decide delimiter: prefer specifiedDelimiter, otherwise detect tab or comma
+        let delimiter = specifiedDelimiter;
+        if (!delimiter) {
+          delimiter = row.includes('\t') ? '\t' : ',';
         }
 
-        function switchMethod(method) {
-            selectedMethod = method;
-            const tabSheet = document.getElementById('tabSheet');
-            const tabPaste = document.getElementById('tabPaste');
-            const sheetArea = document.getElementById('sheetInputArea');
-            const pasteArea = document.getElementById('pasteInputArea');
+        // Use CSV parser for robustness (handles quotes)
+        const columns = parseCsvRow(row, delimiter);
+        if (columns.length < 2) return; // need at least ticker+price (prefer eps too)
 
-            if (method === 'sheet') {
-                tabSheet.className = "py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer";
-                tabPaste.className = "py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer";
-                sheetArea.classList.remove('hidden');
-                pasteArea.classList.add('hidden');
-            } else {
-                tabPaste.className = "py-2 px-4 border-b-2 border-emerald-500 text-emerald-400 font-bold text-sm cursor-pointer";
-                tabSheet.className = "py-2 px-4 border-b-2 border-transparent text-gray-400 font-semibold text-sm hover:text-gray-200 cursor-pointer";
-                pasteArea.classList.remove('hidden');
-                sheetArea.classList.add('hidden');
-            }
-        }
+        // Some sheets may have header rows. Skip obvious headers
+        const first = columns[0].toString().toLowerCase();
+        if (/(ticker|symbol|price|eps|earnings|company)/.test(first)) return;
 
-        function processStockAnalysis() {
-            if (selectedMethod === 'sheet') {
-                fetchFromGoogleSheet();
-            } else {
-                parseManualPasteData();
-            }
-        }
+        const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
+        // allow price to be in 2nd or 3rd column depending on paste order
+        const priceRaw = columns[1] || '';
+        const epsRaw = columns[2] || '';
 
-        async function fetchFromGoogleSheet() {
-            const sheetUrl = document.getElementById('sheetUrl').value.trim();
-            if (!sheetUrl) { return alert("Please enter your published Google Sheet CSV URL."); }
+        const price = parseFloat(priceRaw.toString().replace(/[^\d.\-]/g, ''));
+        const eps = parseFloat(epsRaw.toString().replace(/[^\d.\-]/g, ''));
 
-            try {
-                const response = await fetch(sheetUrl);
-                if (!response.ok) throw new Error("Google access denied.");
-                const csvText = await response.text();
-                renderTableFromRawRows(csvText.split(/\r?\n/), ',');
-            } catch (err) {
-                alert("Browser Security Error: 'Failed to fetch'.\n\nYour browser blocks live spreadsheet connections when running code offline from your local desktop files.\n\n👉 Please click the 'Manual Paste Backup' tab to run your analysis locally right now!");
-            }
-        }
+        if (!ticker || isNaN(price) || isNaN(eps) || price <= 0 || eps <= 0) return;
 
-        function parseManualPasteData() {
-            const rawText = document.getElementById('bulkPasteText').value.trim();
-            if (!rawText) { return alert("Please paste row data into the text field."); }
-            
-            const lines = rawText.split('\n');
-            renderTableFromRawRows(lines, null);
-        }
+        const currentPe = price / eps;
+        const isUndervalued = currentPe < targetPe;
+        counter++;
 
-        function renderTableFromRawRows(rowsArray, specifiedDelimiter) {
-            const targetPe = parseFloat(document.getElementById('targetPe').value);
-            const tbody = document.getElementById('resultsTableBody');
-            tbody.innerHTML = "";
-            let counter = 0;
+        const rowNode = createRowNode({ ticker, price, eps, currentPe, isUndervalued });
+        lastResults.push({ ticker, price, eps, currentPe, isUndervalued, rowNode });
+      });
 
-            rowsArray.forEach(row => {
-                if(!row.trim()) return;
-                
-                let delimiter = specifiedDelimiter;
-                if (!delimiter) {
-                    delimiter = row.includes('\t') ? '\t' : ',';
-                }
+      // Sort: undervalued first, then ascending P/E
+      lastResults.sort((a, b) => {
+        if (a.isUndervalued === b.isUndervalued) return a.currentPe - b.currentPe;
+        return a.isUndervalued ? -1 : 1;
+      });
 
-                const columns = row.split(delimiter);
-                if (columns.length < 3) return;
+      lastResults.forEach(r => tbody.appendChild(r.rowNode));
 
-                const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
-                const price = parseFloat(columns[1].replace(/"/g, '').trim());
-                const eps = parseFloat(columns[2].replace(/"/g, '').trim());
+      document.getElementById('stockCount').innerText = counter;
+      const resultsCard = document.getElementById('resultsCard');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const emptyState = document.getElementById('emptyState');
 
-                if (!ticker || isNaN(price) || isNaN(eps) || price <= 0 || eps <= 0) return;
+      if (counter === 0) {
+        resultsCard.classList.remove('hidden');
+        emptyState.classList.remove('hidden');
+        downloadBtn.classList.add('hidden');
+      } else {
+        resultsCard.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        downloadBtn.classList.remove('hidden');
+      }
+    }
 
-                const currentPe = price / eps;
-                const isUndervalued = currentPe < targetPe;
-                counter++;
+    // Download results as CSV
+    function downloadResults() {
+      if (!lastResults || lastResults.length === 0) return alert('No results to download.');
+      const header = ['Ticker', 'Price', 'EPS', 'P/E', 'Recommendation'];
+      const lines = [header.join(',')];
+      lastResults.forEach(r => {
+        const rec = r.isUndervalued ? 'BUY / UNDERVALUED' : 'SELL / OVERVALUED';
+        const line = [r.ticker, r.price.toFixed(2), r.eps.toFixed(2), r.currentPe.toFixed(2), rec].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        lines.push(line);
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stock-analysis-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-700/30 transition border-b border-gray-800";
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-bold text-gray-200">${ticker.replace('NSE:', '')}</td>
-                    <td class="py-3 px-4 text-emerald-400 font-semibold">₹${price.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-                    <td class="py-3 px-4 text-gray-300">₹${eps.toFixed(2)}</td>
-                    <td class="py-3 px-4 font-bold ${isUndervalued ? 'text-emerald-400' : 'text-rose-400'}">${currentPe.toFixed(2)}</td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="px-2.5 py-1 text-xs font-bold rounded-full ${isUndervalued ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-rose-950 text-rose-400 border border-rose-500/30'}">
-                            ${isUndervalued ? 'BUY / UNDERVALUED' : 'SELL / OVERVALUED'}
-                        </span>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('stockCount').innerText = counter;
-            document.getElementById('resultsCard').classList.remove('hidden');
-        }
-    </script>
+    // Ensure modal visible on load; if dismissed earlier by browser caching, allow direct access
+    document.addEventListener('DOMContentLoaded', () => {
+      // Keep modal visible by default (user will click to accept)
+      disclaimerModal.classList.remove('hidden');
+      mainContent.classList.add('hidden');
+      mainContent.setAttribute('aria-hidden', 'true');
+    });
+  </script>
 </body>
 </html>
