@@ -159,11 +159,11 @@
       }
       
       table {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
       }
 
       th, td {
-        padding: 0.75rem !important;
+        padding: 0.5rem !important;
       }
     }
   </style>
@@ -191,7 +191,7 @@
     <header class="glass-effect border-b border-slate-700/50 py-6 px-4 md:px-8">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl md:text-4xl font-bold gradient-text mb-1">🇮🇳 Indian Stock Master</h1>
-        <p class="text-slate-400 text-sm">Advanced Financial Metrics &amp; Scoring System | Live URL Sync &amp; Offline Copy-Paste</p>
+        <p class="text-slate-400 text-sm">Advanced Financial Metrics &amp; Comprehensive Scoring | Live URL Sync &amp; Offline Copy-Paste</p>
       </div>
     </header>
 
@@ -225,18 +225,14 @@
 
         <!-- Paste Input Area -->
         <div id="pasteInputArea" class="hidden">
-          <label class="block text-xs font-semibold tracking-wider text-slate-400 mb-2 uppercase" for="bulkPasteText">Copy Columns from Sheet &amp; Paste Here</label>
-          <p class="text-xs text-slate-500 mb-3">Format per line: <span class="text-emerald-400">Ticker, Price, EPS, P/S, P/B, Dividend Yield</span> (comma or tab separated)</p>
-          <textarea id="bulkPasteText" rows="6" placeholder="RELIANCE,2450.50,65,3.2,2.1,1.5&#10;TCS,3800.00,115,4.5,2.8,1.2&#10;SBIN,750.25,48,1.8,0.9,2.1" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-300"></textarea>
+          <label class="block text-xs font-semibold tracking-wider text-slate-400 mb-2 uppercase" for="bulkPasteText">Paste Data from Sheet</label>
+          <p class="text-xs text-slate-500 mb-3">Format: <span class="text-emerald-400">Ticker | Price | EPS | Market Cap | 52W High | 52W Low | P/S | P/B | ROCE | D/E | Promoter | ROE</span></p>
+          <textarea id="bulkPasteText" rows="6" placeholder="RELIANCE	2450.50	65	180000	2500	2200	3.2	2.1	18	0.5	40.3	22&#10;TCS	3800.00	115	250000	3900	3400	4.5	2.8	22	0.2	72.1	25" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-300"></textarea>
         </div>
 
         <!-- Controls -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-700/50">
-          <div>
-            <label class="block text-xs font-semibold tracking-wider text-slate-400 mb-2 uppercase" for="targetPe">Target P/E Benchmark</label>
-            <input id="targetPe" type="number" min="1" value="25" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-300" />
-          </div>
-          <div class="flex items-end space-x-2">
+          <div class="flex items-end gap-2">
             <button id="runBtn" onclick="processStockAnalysis()" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-900 font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 button-glow transition-all duration-300 cursor-pointer">
               ▶ Analyze Portfolio
             </button>
@@ -277,20 +273,38 @@
           </div>
         </div>
 
+        <!-- Scoring Breakdown (collapsible) -->
+        <details class="mb-6 p-4 rounded-lg bg-slate-800/30 border border-slate-700/50 cursor-pointer">
+          <summary class="font-semibold text-slate-300 hover:text-emerald-400 transition-colors">📊 Scoring Breakdown & Weights</summary>
+          <div class="mt-4 text-xs text-slate-400 space-y-2">
+            <p><strong class="text-emerald-400">P/E Ratio (12%):</strong> Lower = Better (10–25 range optimal)</p>
+            <p><strong class="text-emerald-400">52W Price Position (10%):</strong> Mid-range = Better (40–60% of range)</p>
+            <p><strong class="text-emerald-400">P/S Ratio (10%):</strong> Lower = Better (0.5–3 range optimal)</p>
+            <p><strong class="text-emerald-400">P/B Ratio (10%):</strong> Lower = Better (0.5–3 range optimal)</p>
+            <p><strong class="text-emerald-400">ROCE (13%):</strong> Higher = Better (15–40% optimal)</p>
+            <p><strong class="text-emerald-400">ROE (15%):</strong> Higher = Better (15–30% optimal) — Profitability measure</p>
+            <p><strong class="text-emerald-400">Debt to Equity (10%):</strong> Lower = Better (&lt;0.5 optimal)</p>
+            <p><strong class="text-emerald-400">Promoter Holding (20%):</strong> Higher = Better (40%+ very good) — Insider confidence</p>
+          </div>
+        </details>
+
         <!-- Table -->
         <div class="overflow-x-auto">
-          <table class="w-full text-left">
+          <table class="w-full text-left text-xs md:text-sm">
             <thead>
               <tr class="border-b border-slate-700/50">
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Ticker</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">Price</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">EPS</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">P/E</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">P/S</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">P/B</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">Div %</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-right">Score</th>
-                <th class="py-3 md:py-4 px-3 md:px-4 text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider text-center">Rating</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider">Ticker</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">Price</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">P/E</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">52W%</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">P/S</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">P/B</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">ROCE</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">ROE</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">D/E</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">Promoter</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-right">Score</th>
+                <th class="py-3 md:py-4 px-2 md:px-4 font-bold text-slate-400 uppercase tracking-wider text-center">Rating</th>
               </tr>
             </thead>
             <tbody id="resultsTableBody" class="divide-y divide-slate-700/30"></tbody>
@@ -308,133 +322,68 @@
 
   <script>
     // ============================================================================
-    // CONFIGURATION & CONSTANTS
+    // CONFIGURATION & SCORING SYSTEM
     // ============================================================================
 
-    const FINANCIAL_METRICS = {
+    const SCORING_CONFIG = {
       pe: {
         name: 'P/E Ratio',
+        weight: 0.12,
         optimal: { min: 10, max: 25 },
-        description: 'Price-to-Earnings ratio',
+        lowerIsBetter: true,
+      },
+      pricePosition: {
+        name: '52W Price Position',
+        weight: 0.10,
+        optimal: { min: 35, max: 65 },
+        lowerIsBetter: false,
       },
       ps: {
         name: 'P/S Ratio',
+        weight: 0.10,
         optimal: { min: 0.5, max: 3 },
-        description: 'Price-to-Sales ratio',
+        lowerIsBetter: true,
       },
       pb: {
         name: 'P/B Ratio',
+        weight: 0.10,
         optimal: { min: 0.5, max: 3 },
-        description: 'Price-to-Book ratio',
+        lowerIsBetter: true,
       },
-      dividend: {
-        name: 'Dividend Yield',
-        optimal: { min: 0, max: 8 },
-        description: 'Annual dividend as % of price',
+      roce: {
+        name: 'ROCE',
+        weight: 0.13,
+        optimal: { min: 15, max: 40 },
+        lowerIsBetter: false,
       },
       roe: {
         name: 'ROE',
-        optimal: { min: 15, max: 100 },
-        description: 'Return on Equity',
+        weight: 0.15,
+        optimal: { min: 15, max: 30 },
+        lowerIsBetter: false,
       },
-      beta: {
-        name: 'Beta',
-        optimal: { min: 0.5, max: 1.5 },
-        description: 'Stock volatility measure',
+      debtToEquity: {
+        name: 'Debt to Equity',
+        weight: 0.10,
+        optimal: { min: 0, max: 0.5 },
+        lowerIsBetter: true,
       },
-    };
-
-    const SCORING_WEIGHTS = {
-      pe: 0.25,
-      ps: 0.15,
-      pb: 0.15,
-      dividend: 0.15,
-      roe: 0.20,
-      beta: 0.10,
+      promoterHolding: {
+        name: 'Promoter Holding',
+        weight: 0.20,
+        optimal: { min: 40, max: 100 },
+        lowerIsBetter: false,
+      },
     };
 
     // ============================================================================
-    // STATE MANAGEMENT
+    // STATE & UTILITIES
     // ============================================================================
 
     let selectedMethod = 'sheet';
     let lastResults = [];
 
-    // ============================================================================
-    // SCORING SYSTEM
-    // ============================================================================
-
-    /**
-     * Calculate score for a single metric (0-100)
-     * @param {string} metricName - Metric key (e.g., 'pe', 'ps')
-     * @param {number} value - The metric value
-     * @returns {number} Score 0-100
-     */
-    function scoreMetric(metricName, value) {
-      const metric = FINANCIAL_METRICS[metricName];
-      if (!metric || value === null || isNaN(value)) return 50;
-
-      const { min, max } = metric.optimal;
-      const range = max - min;
-
-      // For metrics where lower is better (P/E, P/S, P/B, Beta)
-      if (['pe', 'ps', 'pb', 'beta'].includes(metricName)) {
-        if (value <= min) return 100;
-        if (value >= max) return 0;
-        return Math.round(100 * (1 - (value - min) / range));
-      }
-
-      // For metrics where higher is better (ROE, Dividend Yield)
-      if (['roe', 'dividend'].includes(metricName)) {
-        if (value >= max) return 100;
-        if (value <= min) return 0;
-        return Math.round(100 * (value - min) / range);
-      }
-
-      return 50;
-    }
-
-    /**
-     * Calculate overall weighted score
-     * @param {Object} metrics - Object with metric values
-     * @returns {number} Overall score 0-100
-     */
-    function calculateOverallScore(metrics) {
-      let totalScore = 0;
-      let totalWeight = 0;
-
-      for (const [key, weight] of Object.entries(SCORING_WEIGHTS)) {
-        const value = metrics[key];
-        if (value !== null && !isNaN(value)) {
-          const metricScore = scoreMetric(key, value);
-          totalScore += metricScore * weight;
-          totalWeight += weight;
-        }
-      }
-
-      return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
-    }
-
-    /**
-     * Get rating badge based on overall score
-     * @param {number} score - Overall score 0-100
-     * @returns {Object} { label, class, icon }
-     */
-    function getRatingBadge(score) {
-      if (score >= 75) {
-        return { label: 'Worth Researching', class: 'score-excellent', icon: '📈' };
-      } else if (score >= 50) {
-        return { label: 'Neutral', class: 'score-neutral', icon: '⊖' };
-      } else {
-        return { label: 'Avoid for Now', class: 'score-poor', icon: '📉' };
-      }
-    }
-
-    // ============================================================================
-    // UI HELPERS
-    // ============================================================================
-
-    function parseCsvRow(row, delimiter = ',') {
+    function parseCsvRow(row, delimiter = '\t') {
       const values = [];
       let cur = '';
       let inQuotes = false;
@@ -458,7 +407,69 @@
       return values.map(v => v.trim());
     }
 
-    // Modal & Disclaimer
+    // ============================================================================
+    // SCORING ENGINE
+    // ============================================================================
+
+    /**
+     * Score a single metric (0-100)
+     */
+    function scoreMetric(metricKey, value) {
+      if (value === null || isNaN(value)) return 50;
+
+      const config = SCORING_CONFIG[metricKey];
+      if (!config) return 50;
+
+      const { min, max, lowerIsBetter } = config;
+      const range = max - min;
+
+      if (lowerIsBetter) {
+        if (value <= min) return 100;
+        if (value >= max) return 0;
+        return Math.round(100 * (1 - (value - min) / range));
+      } else {
+        if (value >= max) return 100;
+        if (value <= min) return 0;
+        return Math.round(100 * (value - min) / range);
+      }
+    }
+
+    /**
+     * Calculate overall weighted score
+     */
+    function calculateOverallScore(metrics) {
+      let totalScore = 0;
+      let totalWeight = 0;
+
+      for (const [key, config] of Object.entries(SCORING_CONFIG)) {
+        const value = metrics[key];
+        if (value !== null && !isNaN(value)) {
+          const metricScore = scoreMetric(key, value);
+          totalScore += metricScore * config.weight;
+          totalWeight += config.weight;
+        }
+      }
+
+      return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
+    }
+
+    /**
+     * Get rating badge
+     */
+    function getRatingBadge(score) {
+      if (score >= 75) {
+        return { label: 'Worth Researching', class: 'score-excellent', icon: '📈' };
+      } else if (score >= 50) {
+        return { label: 'Neutral', class: 'score-neutral', icon: '⊖' };
+      } else {
+        return { label: 'Avoid for Now', class: 'score-poor', icon: '📉' };
+      }
+    }
+
+    // ============================================================================
+    // UI & MODAL
+    // ============================================================================
+
     const disclaimerModal = document.getElementById('disclaimerModal');
     const mainContent = document.getElementById('mainContent');
     const acceptBtn = document.getElementById('acceptDisclaimerBtn');
@@ -480,7 +491,6 @@
       document.getElementById('tabSheet').focus();
     }
 
-    // Tab Switcher
     function switchMethod(method) {
       selectedMethod = method;
       const tabSheet = document.getElementById('tabSheet');
@@ -542,10 +552,10 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const csvText = await response.text();
         const lines = csvText.split(/\r?\n/).filter(Boolean);
-        renderTableFromRawRows(lines, ',');
+        renderTableFromRawRows(lines, '\t');
       } catch (err) {
         console.error('Fetch error:', err);
-        alert('Failed to fetch from Google Apps Script.\n\nError: ' + err.message + '\n\nTry Manual Paste instead.');
+        alert('Failed to fetch from Google Apps Script.\n\nError: ' + err.message);
       } finally {
         setLoading(false);
       }
@@ -557,49 +567,49 @@
         return alert('Please paste row data into the text field.');
       }
       const lines = rawText.split(/\r?\n/).filter(Boolean);
-      renderTableFromRawRows(lines, null);
+      renderTableFromRawRows(lines, '\t');
     }
 
     // ============================================================================
     // TABLE RENDERING
     // ============================================================================
 
-    /**
-     * Create a table row element
-     */
     function createRowNode(stock) {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-700/30 transition-colors';
 
       const cells = [
-        { text: stock.ticker, class: 'font-bold text-emerald-400' },
-        { text: `₹${stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, class: 'text-right text-slate-300' },
-        { text: `₹${stock.eps.toFixed(2)}`, class: 'text-right text-slate-300' },
-        { text: stock.pe.toFixed(2), class: 'text-right font-semibold text-emerald-300' },
-        { text: stock.ps ? stock.ps.toFixed(2) : '-', class: 'text-right text-slate-300' },
-        { text: stock.pb ? stock.pb.toFixed(2) : '-', class: 'text-right text-slate-300' },
-        { text: stock.dividend ? stock.dividend.toFixed(2) : '-', class: 'text-right text-slate-300' },
+        { text: stock.ticker, class: 'font-bold text-emerald-400 px-2' },
+        { text: `₹${stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, class: 'text-right text-slate-300 px-2' },
+        { text: stock.pe.toFixed(2), class: 'text-right font-semibold text-emerald-300 px-2' },
+        { text: stock.pricePosition.toFixed(1) + '%', class: 'text-right text-slate-300 px-2' },
+        { text: stock.ps ? stock.ps.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.pb ? stock.pb.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.roce ? stock.roce.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.roe ? stock.roe.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.debtToEquity ? stock.debtToEquity.toFixed(2) : '-', class: 'text-right text-slate-300 px-2' },
+        { text: stock.promoterHolding ? stock.promoterHolding.toFixed(1) + '%' : '-', class: 'text-right text-slate-300 px-2' },
       ];
 
       cells.forEach(({ text, class: className }) => {
         const td = document.createElement('td');
         td.textContent = text;
-        td.className = `py-3 md:py-4 px-3 md:px-4 text-sm ${className}`;
+        td.className = `py-2 md:py-4 ${className}`;
         tr.appendChild(td);
       });
 
-      // Overall Score
+      // Score Circle
       const tdScore = document.createElement('td');
-      tdScore.className = 'py-3 md:py-4 px-3 md:px-4 text-right';
+      tdScore.className = 'py-2 md:py-4 px-2 text-right';
       const scoreSpan = document.createElement('span');
       scoreSpan.className = 'score-circle inline-flex';
       scoreSpan.textContent = stock.overallScore;
       tdScore.appendChild(scoreSpan);
       tr.appendChild(tdScore);
 
-      // Rating
+      // Rating Badge
       const tdRating = document.createElement('td');
-      tdRating.className = 'py-3 md:py-4 px-3 md:px-4 text-center';
+      tdRating.className = 'py-2 md:py-4 px-2 text-center';
       const badgeSpan = document.createElement('span');
       const badge = getRatingBadge(stock.overallScore);
       badgeSpan.className = `score-badge ${badge.class}`;
@@ -610,11 +620,7 @@
       return tr;
     }
 
-    /**
-     * Main table renderer
-     */
-    function renderTableFromRawRows(rowsArray, specifiedDelimiter) {
-      const targetPe = parseFloat(document.getElementById('targetPe').value) || 25;
+    function renderTableFromRawRows(rowsArray, delimiter) {
       const tbody = document.getElementById('resultsTableBody');
       tbody.innerHTML = '';
       let counter = 0;
@@ -623,76 +629,82 @@
       rowsArray.forEach(row => {
         if (!row || !row.trim()) return;
 
-        let delimiter = specifiedDelimiter;
-        if (!delimiter) {
-          delimiter = row.includes('\t') ? '\t' : ',';
-        }
-
         const columns = parseCsvRow(row, delimiter);
-        if (columns.length < 2) return;
+        if (columns.length < 11) return;
 
-        // Skip header row
+        // Skip header
         const first = columns[0].toString().toLowerCase();
-        if (/(ticker|symbol|price|eps|earnings|company|ps|pb|dividend)/.test(first)) return;
+        if (/(ticker|symbol|price|eps|market|52w|roce|roe)/.test(first)) return;
 
-        const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
-        const priceRaw = columns[1] || '';
-        const epsRaw = columns[2] || '';
-        const psRaw = columns[3] || '';
-        const pbRaw = columns[4] || '';
-        const dividendRaw = columns[5] || '';
+        try {
+          const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
+          const price = parseFloat(columns[1].toString().replace(/[^\d.\-]/g, ''));
+          const eps = parseFloat(columns[2].toString().replace(/[^\d.\-]/g, ''));
+          const marketCap = parseFloat(columns[3].toString().replace(/[^\d.\-]/g, ''));
+          const high52w = parseFloat(columns[4].toString().replace(/[^\d.\-]/g, ''));
+          const low52w = parseFloat(columns[5].toString().replace(/[^\d.\-]/g, ''));
+          const ps = parseFloat(columns[6].toString().replace(/[^\d.\-]/g, ''));
+          const pb = parseFloat(columns[7].toString().replace(/[^\d.\-]/g, ''));
+          const roce = parseFloat(columns[8].toString().replace(/[^\d.\-]/g, ''));
+          const debtToEquity = parseFloat(columns[9].toString().replace(/[^\d.\-]/g, ''));
+          const promoterHolding = parseFloat(columns[10].toString().replace(/[^\d.\-]/g, ''));
+          const roe = columns[11] ? parseFloat(columns[11].toString().replace(/[^\d.\-]/g, '')) : null;
 
-        const price = parseFloat(priceRaw.toString().replace(/[^\d.\-]/g, ''));
-        const eps = parseFloat(epsRaw.toString().replace(/[^\d.\-]/g, ''));
-        const ps = psRaw ? parseFloat(psRaw.toString().replace(/[^\d.\-]/g, '')) : null;
-        const pb = pbRaw ? parseFloat(pbRaw.toString().replace(/[^\d.\-]/g, '')) : null;
-        const dividend = dividendRaw ? parseFloat(dividendRaw.toString().replace(/[^\d.\-]/g, '')) : null;
+          if (!ticker || isNaN(price) || isNaN(eps) || price <= 0 || eps <= 0) return;
 
-        if (!ticker || isNaN(price) || isNaN(eps) || price <= 0 || eps <= 0) return;
+          // Calculate derived metrics
+          const pe = price / eps;
+          
+          // 52W Position: where is the stock in its 52-week range
+          let pricePosition = 50;
+          if (high52w > low52w && high52w > 0) {
+            pricePosition = ((price - low52w) / (high52w - low52w)) * 100;
+            pricePosition = Math.max(0, Math.min(100, pricePosition));
+          }
 
-        const pe = price / eps;
-        const roe = pb && pb > 0 ? Math.min((1 / pb) * 100, 100) : null;
-        const beta = 1.0;
+          const metrics = {
+            pe,
+            pricePosition,
+            ps: ps && ps > 0 ? ps : null,
+            pb: pb && pb > 0 ? pb : null,
+            roce: roce && roce > 0 ? roce : null,
+            roe: roe && roe > 0 ? roe : null,
+            debtToEquity: debtToEquity && debtToEquity >= 0 ? debtToEquity : null,
+            promoterHolding: promoterHolding && promoterHolding > 0 ? promoterHolding : null,
+          };
 
-        const metrics = {
-          pe,
-          ps: ps || null,
-          pb: pb || null,
-          dividend: dividend || null,
-          roe: roe || null,
-          beta: beta,
-        };
+          const overallScore = calculateOverallScore(metrics);
+          counter++;
 
-        const overallScore = calculateOverallScore(metrics);
-        counter++;
+          const stock = {
+            ticker,
+            price,
+            eps,
+            pe,
+            pricePosition,
+            ps,
+            pb,
+            roce,
+            roe,
+            debtToEquity,
+            promoterHolding,
+            metrics,
+            overallScore,
+          };
 
-        const stock = {
-          ticker,
-          price,
-          eps,
-          pe,
-          ps,
-          pb,
-          dividend,
-          roe,
-          beta,
-          metrics,
-          overallScore,
-        };
-
-        const rowNode = createRowNode(stock);
-        lastResults.push({ ...stock, rowNode });
+          const rowNode = createRowNode(stock);
+          lastResults.push({ ...stock, rowNode });
+        } catch (e) {
+          console.warn('Error parsing row:', row, e);
+        }
       });
 
-      // Sort by overall score descending
+      // Sort by score descending
       lastResults.sort((a, b) => b.overallScore - a.overallScore);
-
       lastResults.forEach(r => tbody.appendChild(r.rowNode));
 
-      // Update summary metrics
       updateSummaryMetrics(counter);
 
-      // Show/hide results
       const resultsCard = document.getElementById('resultsCard');
       const downloadBtn = document.getElementById('downloadBtn');
       const emptyState = document.getElementById('emptyState');
@@ -711,9 +723,6 @@
       }
     }
 
-    /**
-     * Update summary metrics
-     */
     function updateSummaryMetrics(count) {
       document.getElementById('stockCount').textContent = count;
 
@@ -737,7 +746,7 @@
         return alert('No results to download.');
       }
 
-      const header = ['Ticker', 'Price', 'EPS', 'P/E', 'P/S', 'P/B', 'Div Yield', 'Overall Score', 'Rating'];
+      const header = ['Ticker', 'Price', 'P/E', '52W%', 'P/S', 'P/B', 'ROCE', 'ROE', 'D/E', 'Promoter', 'Overall Score', 'Rating'];
       const lines = [header.join(',')];
 
       lastResults.forEach(r => {
@@ -745,11 +754,14 @@
         const line = [
           r.ticker,
           r.price.toFixed(2),
-          r.eps.toFixed(2),
           r.pe.toFixed(2),
+          r.pricePosition.toFixed(1),
           r.ps ? r.ps.toFixed(2) : '-',
           r.pb ? r.pb.toFixed(2) : '-',
-          r.dividend ? r.dividend.toFixed(2) : '-',
+          r.roce ? r.roce.toFixed(1) : '-',
+          r.roe ? r.roe.toFixed(1) : '-',
+          r.debtToEquity ? r.debtToEquity.toFixed(2) : '-',
+          r.promoterHolding ? r.promoterHolding.toFixed(1) : '-',
           r.overallScore,
           badge.label,
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
@@ -768,7 +780,7 @@
     }
 
     // ============================================================================
-    // INITIALIZATION
+    // INIT
     // ============================================================================
 
     document.addEventListener('DOMContentLoaded', () => {
