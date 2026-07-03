@@ -44,13 +44,13 @@
       <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg space-y-4">
 
         <div id="sheetInputArea" aria-live="polite">
-          <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="sheetUrl">Target Google Sheet Database Link</label>
+          <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="sheetUrl">Google Apps Script Web App URL</label>
           <input id="sheetUrl" type="text"
-            placeholder="Paste Google Sheets URL (published or sheet share link). We'll attempt to convert it to a CSV export URL."
+            placeholder="Paste your Google Apps Script deployment URL (from your published sheet)"
             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
             value="" />
           <p class="text-[11px] text-amber-400 mt-1">
-            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. Uses reliable CORS proxy for browser compatibility.
+            ⚠️ Setup: In your Google Sheet, go to Extensions → Apps Script, deploy as Web App, and paste the URL here.
           </p>
         </div>
 
@@ -111,41 +111,6 @@
     // State
     let selectedMethod = 'sheet';
     let lastResults = [];
-
-    // CORS Proxies - Multiple options for reliability
-    const CORS_PROXIES = [
-      'https://api.allorigins.win/raw?url=',
-      'https://corsproxy.io/?',
-    ];
-    let currentProxyIndex = 0;
-
-    // Utility: Convert common Google Sheets links to CSV export URL
-    function convertGoogleSheetToCsvUrl(input) {
-      try {
-        const url = new URL(input.trim());
-        // If it's a published 'spreadsheets/d/e/...' public URL (embed/published)
-        if (url.hostname === 'docs.google.com') {
-          // Handle /spreadsheets/d/<id>/...
-          const pathParts = url.pathname.split('/');
-          const dIndex = pathParts.indexOf('d');
-          if (dIndex >= 0 && pathParts[dIndex + 1]) {
-            const id = pathParts[dIndex + 1];
-            const gid = new URLSearchParams(url.search).get('gid') || '0';
-            return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
-          }
-          // Handle the "spreadsheets/d/e/<id>/pub" style (published by URL)
-          const eIndex = pathParts.indexOf('e');
-          if (eIndex >= 0 && pathParts[eIndex + 1]) {
-            const gid = new URLSearchParams(url.search).get('gid') || '0';
-            return `${url.origin}${url.pathname}?output=csv&gid=${gid}`;
-          }
-        }
-        // Fallback: return original input (maybe already a CSV URL)
-        return input.trim();
-      } catch (e) {
-        return input.trim();
-      }
-    }
 
     // Robust CSV line parser (handles quoted fields with commas)
     function parseCsvRow(row, delimiter = ',') {
@@ -241,64 +206,26 @@
       }
     }
 
-    // Fetch CSV from Google Sheets with multiple CORS proxy attempts
+    // Fetch CSV from Google Apps Script Web App
     async function fetchFromGoogleSheet() {
-      const rawUrl = document.getElementById('sheetUrl').value.trim();
-      if (!rawUrl) { return alert("Please enter your published Google Sheet URL or direct CSV URL."); }
+      const scriptUrl = document.getElementById('sheetUrl').value.trim();
+      if (!scriptUrl) { 
+        return alert("Please enter your Google Apps Script Web App URL.\n\nSteps:\n1. Open your Google Sheet\n2. Extensions → Apps Script\n3. Deploy as Web App\n4. Paste the URL here");
+      }
 
-      const csvUrl = convertGoogleSheetToCsvUrl(rawUrl);
       setLoading(true);
-      
-      // Try direct fetch first
       try {
-        const response = await fetch(csvUrl, { mode: 'cors' });
-        if (response.ok) {
-          const csvText = await response.text();
-          const lines = csvText.split(/\r?\n/).filter(Boolean);
-          renderTableFromRawRows(lines, ',');
-          setLoading(false);
-          return;
-        }
+        const response = await fetch(scriptUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const csvText = await response.text();
+        const lines = csvText.split(/\r?\n/).filter(Boolean);
+        renderTableFromRawRows(lines, ',');
       } catch (err) {
-        console.warn('Direct fetch failed:', err);
+        console.error('Fetch error:', err);
+        alert("Failed to fetch from Google Apps Script.\n\nMake sure:\n1. The URL is correct\n2. The script is deployed as Web App\n3. Access is set to 'Anyone'\n4. Try again or use Manual Paste");
+      } finally {
+        setLoading(false);
       }
-
-      // Try CORS proxies
-      for (let i = 0; i < CORS_PROXIES.length; i++) {
-        try {
-          const proxy = CORS_PROXIES[i];
-          const proxyUrl = proxy + encodeURIComponent(csvUrl);
-          
-          console.log(`Attempting proxy ${i + 1}:`, proxyUrl);
-          const response = await fetch(proxyUrl, { mode: 'cors' });
-          
-          if (response.ok) {
-            let csvText = await response.text();
-            
-            // Some proxies wrap response in JSON
-            if (csvText.startsWith('{')) {
-              try {
-                const json = JSON.parse(csvText);
-                csvText = json.contents || json.data || csvText;
-              } catch (e) {
-                // Not JSON, continue
-              }
-            }
-            
-            const lines = csvText.split(/\r?\n/).filter(Boolean);
-            renderTableFromRawRows(lines, ',');
-            setLoading(false);
-            return;
-          }
-        } catch (err) {
-          console.warn(`Proxy ${i + 1} failed:`, err);
-          continue;
-        }
-      }
-
-      // All attempts failed
-      setLoading(false);
-      alert("Failed to fetch sheet after trying multiple methods.\n\nMake sure:\n1. Your Google Sheet is published/shared as CSV\n2. The URL is publicly accessible\n3. Try the 'Manual Paste' tab instead as a workaround");
     }
 
     // Parse manual paste
