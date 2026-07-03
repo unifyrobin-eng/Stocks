@@ -50,7 +50,7 @@
             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
             value="" />
           <p class="text-[11px] text-amber-400 mt-1">
-            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. Uses CORS proxy for browser compatibility.
+            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. Uses reliable CORS proxy for browser compatibility.
           </p>
         </div>
 
@@ -112,8 +112,12 @@
     let selectedMethod = 'sheet';
     let lastResults = [];
 
-    // CORS Proxy - Uses cors-anywhere free tier
-    const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+    // CORS Proxies - Multiple options for reliability
+    const CORS_PROXIES = [
+      'https://api.allorigins.win/raw?url=',
+      'https://corsproxy.io/?',
+    ];
+    let currentProxyIndex = 0;
 
     // Utility: Convert common Google Sheets links to CSV export URL
     function convertGoogleSheetToCsvUrl(input) {
@@ -132,8 +136,6 @@
           // Handle the "spreadsheets/d/e/<id>/pub" style (published by URL)
           const eIndex = pathParts.indexOf('e');
           if (eIndex >= 0 && pathParts[eIndex + 1]) {
-            // The published-to-web "e" links usually contain a CSV when 'output=csv'
-            // We'll attempt to preserve query params and request the 'output=csv' if possible
             const gid = new URLSearchParams(url.search).get('gid') || '0';
             return `${url.origin}${url.pathname}?output=csv&gid=${gid}`;
           }
@@ -180,7 +182,6 @@
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !disclaimerModal.classList.contains('hidden')) {
-        // optional: allow Escape to accept the disclaimer for flow
         acceptDisclaimer();
       }
     });
@@ -189,7 +190,6 @@
       disclaimerModal.classList.add('hidden');
       mainContent.classList.remove('hidden');
       mainContent.setAttribute('aria-hidden', 'false');
-      // focus first interactive element
       document.getElementById('tabSheet').focus();
     }
 
@@ -241,37 +241,64 @@
       }
     }
 
-    // Fetch CSV from Google Sheets (attempt URL conversion with CORS proxy fallback)
+    // Fetch CSV from Google Sheets with multiple CORS proxy attempts
     async function fetchFromGoogleSheet() {
       const rawUrl = document.getElementById('sheetUrl').value.trim();
       if (!rawUrl) { return alert("Please enter your published Google Sheet URL or direct CSV URL."); }
 
       const csvUrl = convertGoogleSheetToCsvUrl(rawUrl);
       setLoading(true);
+      
+      // Try direct fetch first
       try {
-        // First attempt: direct fetch (no CORS proxy)
         const response = await fetch(csvUrl, { mode: 'cors' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const csvText = await response.text();
-        const lines = csvText.split(/\r?\n/).filter(Boolean);
-        renderTableFromRawRows(lines, ',');
-      } catch (err) {
-        console.warn('Direct fetch failed, attempting with CORS proxy...', err);
-        // Fallback: use CORS proxy
-        try {
-          const corsUrl = CORS_PROXY + csvUrl;
-          const response = await fetch(corsUrl, { mode: 'cors' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (response.ok) {
           const csvText = await response.text();
           const lines = csvText.split(/\r?\n/).filter(Boolean);
           renderTableFromRawRows(lines, ',');
-        } catch (corsErr) {
-          console.error('CORS proxy fetch also failed:', corsErr);
-          alert("Failed to fetch sheet. Possible causes:\n- URL is not a CSV/export URL\n- Sheet is not published/shared for CSV\n- Network/proxy issues\n\nIf fetch fails, try 'Manual Paste' and paste the rows directly.");
+          setLoading(false);
+          return;
         }
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.warn('Direct fetch failed:', err);
       }
+
+      // Try CORS proxies
+      for (let i = 0; i < CORS_PROXIES.length; i++) {
+        try {
+          const proxy = CORS_PROXIES[i];
+          const proxyUrl = proxy + encodeURIComponent(csvUrl);
+          
+          console.log(`Attempting proxy ${i + 1}:`, proxyUrl);
+          const response = await fetch(proxyUrl, { mode: 'cors' });
+          
+          if (response.ok) {
+            let csvText = await response.text();
+            
+            // Some proxies wrap response in JSON
+            if (csvText.startsWith('{')) {
+              try {
+                const json = JSON.parse(csvText);
+                csvText = json.contents || json.data || csvText;
+              } catch (e) {
+                // Not JSON, continue
+              }
+            }
+            
+            const lines = csvText.split(/\r?\n/).filter(Boolean);
+            renderTableFromRawRows(lines, ',');
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.warn(`Proxy ${i + 1} failed:`, err);
+          continue;
+        }
+      }
+
+      // All attempts failed
+      setLoading(false);
+      alert("Failed to fetch sheet after trying multiple methods.\n\nMake sure:\n1. Your Google Sheet is published/shared as CSV\n2. The URL is publicly accessible\n3. Try the 'Manual Paste' tab instead as a workaround");
     }
 
     // Parse manual paste
@@ -330,22 +357,18 @@
       rowsArray.forEach(row => {
         if (!row || !row.trim()) return;
 
-        // Decide delimiter: prefer specifiedDelimiter, otherwise detect tab or comma
         let delimiter = specifiedDelimiter;
         if (!delimiter) {
           delimiter = row.includes('\t') ? '\t' : ',';
         }
 
-        // Use CSV parser for robustness (handles quotes)
         const columns = parseCsvRow(row, delimiter);
-        if (columns.length < 2) return; // need at least ticker+price (prefer eps too)
+        if (columns.length < 2) return;
 
-        // Some sheets may have header rows. Skip obvious headers
         const first = columns[0].toString().toLowerCase();
         if (/(ticker|symbol|price|eps|earnings|company)/.test(first)) return;
 
         const ticker = columns[0].replace(/"/g, '').trim().toUpperCase();
-        // allow price to be in 2nd or 3rd column depending on paste order
         const priceRaw = columns[1] || '';
         const epsRaw = columns[2] || '';
 
@@ -362,7 +385,6 @@
         lastResults.push({ ticker, price, eps, currentPe, isUndervalued, rowNode });
       });
 
-      // Sort: undervalued first, then ascending P/E
       lastResults.sort((a, b) => {
         if (a.isUndervalued === b.isUndervalued) return a.currentPe - b.currentPe;
         return a.isUndervalued ? -1 : 1;
@@ -407,9 +429,7 @@
       URL.revokeObjectURL(url);
     }
 
-    // Ensure modal visible on load; if dismissed earlier by browser caching, allow direct access
     document.addEventListener('DOMContentLoaded', () => {
-      // Keep modal visible by default (user will click to accept)
       disclaimerModal.classList.remove('hidden');
       mainContent.classList.add('hidden');
       mainContent.setAttribute('aria-hidden', 'true');
