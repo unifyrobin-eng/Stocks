@@ -50,7 +50,7 @@
             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
             value="" />
           <p class="text-[11px] text-amber-400 mt-1">
-            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. If CORS prevents direct fetch in your browser, use Manual Paste below.
+            ⚠️ Note: For live fetches your sheet must be published/shared as CSV. Uses CORS proxy for browser compatibility.
           </p>
         </div>
 
@@ -68,10 +68,10 @@
             <input id="targetPe" type="number" min="1" value="25" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div class="flex items-end space-x-2">
-            <button id="runBtn" onclick="processStockAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <button id="runBtn" onclick="processStockAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer">
               Run Portfolio Analysis
             </button>
-            <button id="downloadBtn" onclick="downloadResults()" class="hidden bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" title="Download results as CSV">
+            <button id="downloadBtn" onclick="downloadResults()" class="hidden bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
               ⤓ CSV
             </button>
           </div>
@@ -111,6 +111,9 @@
     // State
     let selectedMethod = 'sheet';
     let lastResults = [];
+
+    // CORS Proxy - Uses cors-anywhere free tier
+    const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
 
     // Utility: Convert common Google Sheets links to CSV export URL
     function convertGoogleSheetToCsvUrl(input) {
@@ -238,7 +241,7 @@
       }
     }
 
-    // Fetch CSV from Google Sheets (attempt URL conversion)
+    // Fetch CSV from Google Sheets (attempt URL conversion with CORS proxy fallback)
     async function fetchFromGoogleSheet() {
       const rawUrl = document.getElementById('sheetUrl').value.trim();
       if (!rawUrl) { return alert("Please enter your published Google Sheet URL or direct CSV URL."); }
@@ -246,15 +249,26 @@
       const csvUrl = convertGoogleSheetToCsvUrl(rawUrl);
       setLoading(true);
       try {
+        // First attempt: direct fetch (no CORS proxy)
         const response = await fetch(csvUrl, { mode: 'cors' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const csvText = await response.text();
-        // Split into lines robustly
         const lines = csvText.split(/\r?\n/).filter(Boolean);
         renderTableFromRawRows(lines, ',');
       } catch (err) {
-        console.error('Fetch error:', err);
-        alert("Failed to fetch sheet. Possible causes:\n- URL is not a CSV/export URL\n- Sheet is not published/shared for CSV\n- CORS prevents direct fetch from the browser\n\nIf fetch fails, try 'Manual Paste' and paste the rows directly.");
+        console.warn('Direct fetch failed, attempting with CORS proxy...', err);
+        // Fallback: use CORS proxy
+        try {
+          const corsUrl = CORS_PROXY + csvUrl;
+          const response = await fetch(corsUrl, { mode: 'cors' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const csvText = await response.text();
+          const lines = csvText.split(/\r?\n/).filter(Boolean);
+          renderTableFromRawRows(lines, ',');
+        } catch (corsErr) {
+          console.error('CORS proxy fetch also failed:', corsErr);
+          alert("Failed to fetch sheet. Possible causes:\n- URL is not a CSV/export URL\n- Sheet is not published/shared for CSV\n- Network/proxy issues\n\nIf fetch fails, try 'Manual Paste' and paste the rows directly.");
+        }
       } finally {
         setLoading(false);
       }
