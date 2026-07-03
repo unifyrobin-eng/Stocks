@@ -46,11 +46,11 @@
         <div id="sheetInputArea" aria-live="polite">
           <label class="block text-xs font-semibold tracking-wider text-gray-400 mb-1" for="sheetUrl">Google Apps Script Web App URL</label>
           <input id="sheetUrl" type="text"
-            placeholder="Paste your Google Apps Script deployment URL (from your published sheet)"
+            placeholder="Paste your Google Apps Script deployment URL"
             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-            value="" />
-          <p class="text-[11px] text-amber-400 mt-1">
-            ⚠️ Setup: In your Google Sheet, go to Extensions → Apps Script, deploy as Web App, and paste the URL here.
+            value="https://script.google.com/macros/s/AKfycbwUokqZxNhaj7QFYrZKNM4tFNqK9sw4yW-9BIpjlY25OIgHnJDYBihiW_RLxcetot7l/exec" />
+          <p class="text-[11px] text-emerald-400 mt-1">
+            ✓ Connected to your Google Sheet. Click 'Run Portfolio Analysis' to load data.
           </p>
         </div>
 
@@ -210,7 +210,7 @@
     async function fetchFromGoogleSheet() {
       const scriptUrl = document.getElementById('sheetUrl').value.trim();
       if (!scriptUrl) { 
-        return alert("Please enter your Google Apps Script Web App URL.\n\nSteps:\n1. Open your Google Sheet\n2. Extensions → Apps Script\n3. Deploy as Web App\n4. Paste the URL here");
+        return alert("Please enter your Google Apps Script Web App URL.");
       }
 
       setLoading(true);
@@ -222,7 +222,7 @@
         renderTableFromRawRows(lines, ',');
       } catch (err) {
         console.error('Fetch error:', err);
-        alert("Failed to fetch from Google Apps Script.\n\nMake sure:\n1. The URL is correct\n2. The script is deployed as Web App\n3. Access is set to 'Anyone'\n4. Try again or use Manual Paste");
+        alert("Failed to fetch from Google Apps Script.\n\nError: " + err.message + "\n\nTry Manual Paste instead.");
       } finally {
         setLoading(false);
       }
